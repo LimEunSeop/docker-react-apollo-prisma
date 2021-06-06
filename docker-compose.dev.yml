@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile-dev
+    depends_on:
+      - db
+    # stdin_open: true # docker run -i
+    # tty: true # docker run -t
+    command: ['./wait-for-it.sh', 'db:5432', '--', 'bash', '-c', 'npm start']
+    ports:
+      - 3000:3000
+      - 3001:3001
+    working_dir: '/usr/src/app'
+    volumes:
+      - ./web/server:/usr/src/app/server
+      - ./web/client/src:/usr/src/app/client/src
+    environment:
+      - NODE_ENV=development
+      - SERVER_PORT=3001
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - DB_NAME={$DB_NAME}
+  # (echo >/dev/tcp/mysql/3306) &>/dev/null && echo "open" || echo "closed"
+  db:
+    image: postgres:13.3
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASS}
+      - POSTGRES_DB=${DB_NAME}
+    volumes:
+      - ./db:/var/lib/postgresql/data
